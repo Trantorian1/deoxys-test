@@ -1,0 +1,23 @@
+[package]
+edition = "2021"
+name = "deoxys_test"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bonsai-trie = { git = "https://github.com/keep-starknet-strange/bonsai-trie.git", branch = "oss", features = [
+    "rocksdb"
+]}
+starknet-types-core = { version = "0.0.7", default-features = false, features = [
+    "hash",
+    "parity-scale-codec",
+] }
+bitvec = "1.0.1"
+starknet_api = { git = "https://github.com/keep-starknet-strange/starknet-api", branch = "no_std-support-dc83f05", features = [
+  "parity-scale-codec",
+  "std",
+  "testing",
+  "testing",
+], default-features = false }
+rand = "0.8.5"
