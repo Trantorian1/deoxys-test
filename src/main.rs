@@ -21,7 +21,7 @@ pub fn main() {
     let mut id_builder = BasicIdBuilder::new();
 
     // This is an exerpt of the storage for contract
-    // 0x020cfa74ee3564b4cd5435cdace0f9c4d43b939620e4a0bb5076105df0a626c6 at block 4
+    // 0x020cfa74ee3564b4cd5435cdace0f9c4d43b939620e4a0bb5076105df0a626c6 at block 0
     let contract_states = vec![
         ContractState {
             address: "0x0000000000000000000000000000000000000000000000000000000000000005",
