@@ -21,3 +21,4 @@ starknet_api = { git = "https://github.com/keep-starknet-strange/starknet-api", 
   "testing",
 ], default-features = false }
 rand = "0.8.5"
+tempfile = "3.10.1"
