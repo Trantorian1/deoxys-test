@@ -6,19 +6,21 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bonsai-trie = { git = "https://github.com/keep-starknet-strange/bonsai-trie.git", branch = "oss", features = [
+bonsai-trie = { git = "https://github.com/antiyro/bonsai-trie.git", features = [
     "rocksdb"
 ]}
-starknet-types-core = { version = "0.0.7", default-features = false, features = [
-    "hash",
-    "parity-scale-codec",
-] }
 bitvec = "1.0.1"
-starknet_api = { git = "https://github.com/keep-starknet-strange/starknet-api", branch = "no_std-support-dc83f05", features = [
-  "parity-scale-codec",
-  "std",
-  "testing",
-  "testing",
-], default-features = false }
-rand = "0.8.5"
 tempfile = "3.10.1"
+rocksdb = { version = "0.21.0", features = [
+    "multi-threaded-cf",
+] }
+lazy_static = "1.4.0"
+starknet = { git = "https://github.com/jbcaron/starknet-rs.git", branch = "classes" }
+tokio = { version = "1", features = ["full"] }
+anyhow = "1.0.81"
+starknet-ff = { git = "https://github.com/jbcaron/starknet-rs.git" }
+starknet-types-core = { git = "https://github.com/starknet-io/types-rs.git", branch = "main", default-features = false, features = [
+    "hash",
+    "parity-scale-codec"
+] }
+indicatif = "0.17.8"
