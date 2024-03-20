@@ -9,6 +9,10 @@ use bonsai_trie::BonsaiStorageConfig;
 use bonsai_trie::{databases::RocksDB, BonsaiStorage};
 use indicatif::{ProgressBar, ProgressStyle};
 use lazy_static::lazy_static;
+use pathfinder_merkle_tree::tree::{MerkleTree, TestStorage};
+use pathfinder_common::hash::PedersenHash;
+use pathfinder_crypto::Felt as PathfinderFelt;
+use pathfinder_storage::{Node, StoredNode};
 use starknet::core::types::FieldElement;
 use starknet::providers::{
     sequencer::models::{
@@ -36,11 +40,11 @@ async fn main() {
 
     // Change this to update the range of blocks to test
     // NOTE: This should contain the block at which `contract_address` was defined
-    let block_range = 0..400;
+    let block_range = 190..500;
 
     // The contract to watch
     let contract_address = FieldElement::from_hex_be(
-        "0x020cfa74ee3564b4cd5435cdace0f9c4d43b939620e4a0bb5076105df0a626c6",
+        "0x6a09ccb1caaecf3d9683efe335a667b2169a409d19c589ba1eb771cd210af75",
     )
     .unwrap();
 
@@ -62,8 +66,12 @@ async fn main() {
             bar.println(format!("🧱 block {i}"));
             save_storage_update(contract_address, storage_updates).await;
 
-            let storage_root = storage_root(contract_address, &bar).await;
-            bar.println(format!("🌳 storage root: {storage_root:#064x}"));
+            let bonsai_storage_root = bonsai_storage_root(contract_address, &bar).await;
+
+            let pathfinder_storage_root = pathfinder_storage_root(contract_address, &bar).await;
+            bar.println(format!("🌳 storage root: {bonsai_storage_root:#064x}"));
+            bar.println(format!("🌳 storage root pathfinder: {pathfinder_storage_root:#064x}"));
+            assert_eq!(bonsai_storage_root, pathfinder_storage_root);
         }
     }
 
@@ -106,7 +114,7 @@ async fn save_storage_update(contract_address: FieldElement, storage_updates: &[
     };
 }
 
-async fn storage_root(contract_address: FieldElement, bar: &ProgressBar) -> Felt {
+async fn bonsai_storage_root(contract_address: FieldElement, bar: &ProgressBar) -> Felt {
     let tempdir = tempdir().unwrap();
     let db = create_rocks_db(tempdir.path()).unwrap();
     let config = BonsaiStorageConfig::default();
@@ -134,4 +142,91 @@ async fn storage_root(contract_address: FieldElement, bar: &ProgressBar) -> Felt
     bonsai_storage
         .root_hash(IDENTIFIER)
         .expect("Failed to retrieve root hash")
+}
+
+async fn pathfinder_storage_root(contract_address: FieldElement, bar: &ProgressBar) -> Felt {
+    let mut pathfinder_merkle_tree: MerkleTree<PedersenHash, 251> =
+    pathfinder_merkle_tree::tree::MerkleTree::empty();
+    let mut storage = pathfinder_merkle_tree::tree::TestStorage::default();
+    let contract_storage = CONTRACT_STORAGE.read().await;
+    let contract_storage = contract_storage.get(&contract_address).unwrap();
+
+    for (key, value) in contract_storage.read().await.iter() {
+        //bar.println(format!("🔑 {key:#x} -> {value:#x}"));
+        let key = key.to_bytes_be().view_bits()[5..].to_owned();
+        let value = PathfinderFelt::from_be_slice(&value.to_bytes_be()).unwrap();
+
+        pathfinder_merkle_tree
+        .set(
+            &storage,
+            key,
+            value,
+        )
+        .unwrap();
+    }
+
+    let (felt, _) = commit_and_persist(pathfinder_merkle_tree.clone(), &mut storage);
+    Felt::from_hex(&felt.to_hex_str().into_owned()).unwrap()
+}
+
+/// Commits the tree changes and persists them to storage.
+fn commit_and_persist(
+    tree: MerkleTree<PedersenHash, 251>,
+    storage: &mut TestStorage,
+) -> (PathfinderFelt, u64) {
+    use pathfinder_storage::Child;
+
+    for (key, value) in &tree.leaves {
+        let key = PathfinderFelt::from_bits(key).unwrap();
+        storage.leaves.insert(key, *value);
+    }
+
+    let update = tree.commit(storage).unwrap();
+
+    let mut indices = HashMap::new();
+    let mut idx = storage.nodes.len();
+    for hash in update.nodes.keys() {
+        indices.insert(*hash, idx as u64);
+        idx += 1;
+    }
+
+    for (hash, node) in update.nodes {
+        let node = match node {
+            Node::Binary { left, right } => {
+                let left = match left {
+                    Child::Id(idx) => idx,
+                    Child::Hash(hash) => {
+                        *indices.get(&hash).expect("Left child should have an index")
+                    }
+                };
+
+                let right = match right {
+                    Child::Id(idx) => idx,
+                    Child::Hash(hash) => *indices
+                        .get(&hash)
+                        .expect("Right child should have an index"),
+                };
+
+                StoredNode::Binary { left, right }
+            }
+            Node::Edge { child, path } => {
+                let child = match child {
+                    Child::Id(idx) => idx,
+                    Child::Hash(hash) => *indices.get(&hash).expect("Child should have an index"),
+                };
+
+                StoredNode::Edge { child, path }
+            }
+            Node::LeafBinary => StoredNode::LeafBinary,
+            Node::LeafEdge { path } => StoredNode::LeafEdge { path },
+        };
+
+        storage
+            .nodes
+            .insert(*indices.get(&hash).unwrap(), (hash, node));
+    }
+
+    let index = *indices.get(&update.root).unwrap();
+
+    (update.root, index)
 }

@@ -6,7 +6,7 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bonsai-trie = { git = "https://github.com/antiyro/bonsai-trie.git", features = [
+bonsai-trie = { git = "https://github.com/massalabs/bonsai-trie.git", branch = "add_multi_trie_management", features = [
     "rocksdb"
 ]}
 bitvec = "1.0.1"
@@ -19,8 +19,12 @@ starknet = { git = "https://github.com/jbcaron/starknet-rs.git", branch = "class
 tokio = { version = "1", features = ["full"] }
 anyhow = "1.0.81"
 starknet-ff = { git = "https://github.com/jbcaron/starknet-rs.git" }
-starknet-types-core = { git = "https://github.com/starknet-io/types-rs.git", branch = "main", default-features = false, features = [
+starknet-types-core = { version = "0.0.7", default-features = false, features = [
     "hash",
-    "parity-scale-codec"
+    "parity-scale-codec",
 ] }
 indicatif = "0.17.8"
+pathfinder-merkle-tree = { git = "https://github.com/massalabs/pathfinder.git", package = "pathfinder-merkle-tree", rev = "b7b6d76a76ab0e10f92e5f84ce099b5f727cb4db" }
+pathfinder-common = { git = "https://github.com/massalabs/pathfinder.git", package = "pathfinder-common", rev = "b7b6d76a76ab0e10f92e5f84ce099b5f727cb4db" }
+pathfinder-crypto = { git = "https://github.com/massalabs/pathfinder.git", package = "pathfinder-crypto", rev = "b7b6d76a76ab0e10f92e5f84ce099b5f727cb4db" }
+pathfinder-storage = { git = "https://github.com/massalabs/pathfinder.git", package = "pathfinder-storage", rev = "b7b6d76a76ab0e10f92e5f84ce099b5f727cb4db" }
