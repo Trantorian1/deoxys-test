@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use anyhow::anyhow;
 use bitvec::view::BitView;
-use bonsai_trie::databases::{create_rocks_db, RocksDBConfig};
+use bonsai_trie::databases::{create_rocks_db, HashMapDb, RocksDBConfig};
 use bonsai_trie::id::{BasicId, BasicIdBuilder};
 use bonsai_trie::BonsaiStorageConfig;
 use bonsai_trie::{databases::RocksDB, BonsaiStorage};
@@ -64,6 +64,8 @@ async fn main() {
         BonsaiStorageConfig::default(),
     )
     .unwrap();
+    // let mut persistent_bonsai_storage = BonsaiStorage::new(
+    //     HashMapDb::default(), BonsaiStorageConfig::default()).unwrap();
     let mut persistent_pathfinder_merkle_tree: MerkleTree<PedersenHash, 251> =
     pathfinder_merkle_tree::tree::MerkleTree::empty();
     let mut persistent_storage = pathfinder_merkle_tree::tree::TestStorage::default();
@@ -92,6 +94,7 @@ async fn main() {
             } else {
                 //let bonsai_storage_root = bonsai_storage_root(contract_address, &bar).await;
                 //let pathfinder_storage_root = pathfinder_storage_root(contract_address, &bar).await;
+                let start = std::time::Instant::now();
                 let bonsai_storage_persistent_root = bonsai_storage_persistent_root(
                     contract_address,
                     &mut persistent_bonsai_storage,
@@ -99,15 +102,18 @@ async fn main() {
                     &bar,
                 )
                 .await;
+                let end = start.elapsed();
+                bar.println(format!(
+                    "🌳 storage root persistent bonsai: {bonsai_storage_persistent_root:#064x} in {}ms", end.as_millis()
+                ));
+                let start = std::time::Instant::now();
                 let pathfinder_storage_persistent_root = pathfinder_storage_persistent_root(contract_address, &mut persistent_pathfinder_merkle_tree, &mut persistent_storage, &bar).await;
+                let end = start.elapsed();
+                bar.println(format!(
+                    "🌳 storage root persistent pathfinder: {pathfinder_storage_persistent_root:#064x} in {}ms", end.as_millis()
+                ));
                 //bar.println(format!("🌳 storage root bonsai: {bonsai_storage_root:#064x}"));
                 //bar.println(format!("🌳 storage root pathfinder: {pathfinder_storage_root:#064x}"));
-                bar.println(format!(
-                    "🌳 storage root persistent bonsai: {bonsai_storage_persistent_root:#064x}"
-                ));
-                bar.println(format!(
-                    "🌳 storage root persistent pathfinder: {pathfinder_storage_persistent_root:#064x}"
-                ));
                 //assert_eq!(bonsai_storage_root, bonsai_storage_persistent_root);
                 //assert_eq!(bonsai_storage_root, pathfinder_storage_root);
                 assert_eq!(bonsai_storage_persistent_root, pathfinder_storage_persistent_root);
