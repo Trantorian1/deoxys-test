@@ -6,7 +6,7 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bonsai-trie = { git = "https://github.com/massalabs/bonsai-trie.git", branch = "add_multi_trie_management", features = [
+bonsai-trie = {path = "../bonsai-trie", features = [
     "rocksdb"
 ]}
 bitvec = "1.0.1"
