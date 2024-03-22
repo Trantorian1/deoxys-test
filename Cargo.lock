@@ -300,6 +300,7 @@ dependencies = [
 [[package]]
 name = "bonsai-trie"
 version = "0.1.0"
+source = "git+https://github.com/massalabs/bonsai-trie.git?rev=b4e7828f7dad69aa276d3b39be4c04139bda5f56#b4e7828f7dad69aa276d3b39be4c04139bda5f56"
 dependencies = [
  "bitvec",
  "derive_more",
